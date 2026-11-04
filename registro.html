@@ -1,29 +1,79 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <title>Registro - Plazmo Drive</title>
     <link rel="stylesheet" href="estilos.css">
 </head>
+
 <body>
 
 <header>
-    <img src="plazmodrive.jpg" alt="Plazmo Drive" 
+    <img src="plazmodrive.jpg"
          alt="Logo Plazmo Drive"
          style="width:180px; display:block; margin:0 auto 10px;">
+
     <h1>PLAZMO DRIVE</h1>
 </header>
 
 <div class="contenedor">
+
     <h2>Registro de Usuario</h2>
 
-    <input type="text" placeholder="Nombres">
-    <input type="text" placeholder="Apellidos">
-    <input type="number" placeholder="Cédula">
-    <input type="date" placeholder="Fecha de nacimiento">
+    <input type="text" id="nombres" placeholder="Nombres">
 
-    <button>Guardar</button>
+    <input type="text" id="apellidos" placeholder="Apellidos">
+
+    <input type="number" id="cedula" placeholder="Cédula">
+
+    <input type="date" id="fechaNacimiento">
+
+    <input type="password" id="password" placeholder="Contraseña">
+
+    <button onclick="guardarRegistro()">Guardar</button>
+    <button onclick="window.location.href='login.html'">Volver</button>
+
+    <p id="mensaje"></p>
+
 </div>
 
+<script>
+const API = "http://127.0.0.1:8080/plazmodrive/api";
+
+async function guardarRegistro() {
+    const nombres = document.getElementById("nombres").value.trim();
+    const apellidos = document.getElementById("apellidos").value.trim();
+    const cedula = document.getElementById("cedula").value.trim();
+    const fecha = document.getElementById("fechaNacimiento").value;
+    const password = document.getElementById("password").value;
+    const mensaje = document.getElementById("mensaje");
+
+    if (nombres === "" || apellidos === "" || cedula === "" || fecha === "" || password === "") {
+        mensaje.textContent = "Por favor, complete todos los campos.";
+        return;
+    }
+
+    try {
+        const res = await fetch(API + "/usuarios", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nombres, apellidos, cedula, fechaNacimiento: fecha, password })
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok) {
+            mensaje.textContent = "Registro guardado correctamente. Bienvenido a Plazmo Drive.";
+            setTimeout(() => window.location.href = "login.html", 1200);
+        } else {
+            mensaje.textContent = data.error || "No se pudo guardar el registro.";
+        }
+    } catch (e) {
+        mensaje.textContent = "No se pudo conectar con el servidor. ¿Está encendido?";
+    }
+}
+</script>
+
 </body>
+
 </html>

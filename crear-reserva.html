@@ -15,18 +15,99 @@
 <div class="contenedor">
     <h2>Datos de la Reserva</h2>
 
-    <input type="text" placeholder="Nombre del Cliente">
-    <input type="text" placeholder="Vehículo (Placa / Modelo)">
+    <label>Cliente</label>
+    <select id="cliente"></select>
+
+    <label>Vehículo</label>
+    <select id="vehiculo"></select>
 
     <label>Fecha de Inicio</label>
-    <input type="date">
+    <input type="date" id="fechaInicio">
 
     <label>Fecha de Fin</label>
-    <input type="date">
+    <input type="date" id="fechaFin">
 
-    <button>Confirmar Reserva</button>
+    <button onclick="confirmarReserva()">Confirmar Reserva</button>
     <button onclick="window.location.href='home.html'">Volver</button>
+
+    <p id="mensaje"></p>
 </div>
+
+<script>
+const API = "http://127.0.0.1:8080/plazmodrive/api";
+
+function opcion(valor, texto) {
+    const o = document.createElement("option");
+    o.value = valor;
+    o.textContent = texto;
+    return o;
+}
+
+async function cargarListas() {
+    const mensaje = document.getElementById("mensaje");
+    try {
+        const [us, ve] = await Promise.all([
+            fetch(API + "/usuarios").then(r => r.json()),
+            fetch(API + "/vehiculos").then(r => r.json())
+        ]);
+
+        const selC = document.getElementById("cliente");
+        us.forEach(u => selC.appendChild(opcion(u.id, u.nombres + " " + u.apellidos + " (" + u.cedula + ")")));
+
+        // Si hay sesión iniciada, deja seleccionado a ese usuario
+        try {
+            const actual = JSON.parse(localStorage.getItem("usuario"));
+            if (actual) selC.value = actual.id;
+        } catch (e) {}
+
+        const selV = document.getElementById("vehiculo");
+        ve.forEach(v => selV.appendChild(opcion(v.id,
+            v.marca + " " + v.modelo + " - " + v.placa + " (" + v.estado.toLowerCase() + ")")));
+
+        if (us.length === 0) mensaje.textContent = "Primero registre un usuario.";
+        else if (ve.length === 0) mensaje.textContent = "Primero registre un vehículo.";
+    } catch (e) {
+        mensaje.textContent = "No se pudo conectar con el servidor. ¿Está encendido?";
+    }
+}
+
+async function confirmarReserva() {
+    const mensaje = document.getElementById("mensaje");
+    const usuarioId = document.getElementById("cliente").value;
+    const vehiculoId = document.getElementById("vehiculo").value;
+    const fechaInicio = document.getElementById("fechaInicio").value;
+    const fechaFin = document.getElementById("fechaFin").value;
+
+    if (!usuarioId || !vehiculoId || !fechaInicio || !fechaFin) {
+        mensaje.textContent = "Por favor, complete todos los campos.";
+        return;
+    }
+
+    try {
+        const res = await fetch(API + "/reservas", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                usuarioId: Number(usuarioId),
+                vehiculoId: Number(vehiculoId),
+                fechaInicio, fechaFin
+            })
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok) {
+            mensaje.textContent = "Reserva creada correctamente.";
+            setTimeout(() => window.location.href = "historial-reservas.html", 1000);
+        } else {
+            mensaje.textContent = data.error || "No se pudo crear la reserva.";
+        }
+    } catch (e) {
+        mensaje.textContent = "No se pudo conectar con el servidor. ¿Está encendido?";
+    }
+}
+
+cargarListas();
+</script>
 
 </body>
 </html>

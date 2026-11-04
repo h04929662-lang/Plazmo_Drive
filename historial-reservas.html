@@ -6,16 +6,96 @@
     <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
+
 <header>
-    <img src="plazmodrive.jpg" style="width:180px; display:block; margin:0 auto;">
+    <img src="plazmodrive.jpg" class="logo" alt="Plazmo Drive">
     <h1>Historial de Reservas</h1>
 </header>
 
 <div class="contenedor">
-    <ul>
-        <li>Reserva #001 - Mazda 3 - 05/11/2025</li>
-        <li>Reserva #002 - Chevrolet Onix - 10/11/2025</li>
-    </ul>
+    <h2>Reservas registradas</h2>
+
+    <input type="text" id="buscar" placeholder="Buscar por cliente o placa..." oninput="mostrar()">
+
+    <div class="lista" id="lista">
+        <p>Cargando...</p>
+    </div>
+
+    <button onclick="window.location.href='crear-reserva.html'">Nueva Reserva</button>
+    <button onclick="window.location.href='home.html'">Volver</button>
+
+    <p id="mensaje"></p>
 </div>
+
+<script>
+const API = "http://127.0.0.1:8080/plazmodrive/api";
+let reservas = [];
+
+function capitalizar(t) {
+    t = (t || "").toLowerCase();
+    return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+function mostrar() {
+    const lista = document.getElementById("lista");
+    const q = document.getElementById("buscar").value.trim().toLowerCase();
+    lista.innerHTML = "";
+
+    const filtradas = reservas.filter(r =>
+        (r.usuario.nombres + " " + r.usuario.apellidos + " " + r.vehiculo.placa).toLowerCase().includes(q));
+
+    if (filtradas.length === 0) {
+        const p = document.createElement("p");
+        p.textContent = "No hay reservas para mostrar.";
+        lista.appendChild(p);
+        return;
+    }
+
+    filtradas.forEach(r => {
+        const p = document.createElement("p");
+        p.textContent = "• " + r.usuario.nombres + " " + r.usuario.apellidos
+            + " - " + r.vehiculo.marca + " " + r.vehiculo.modelo + " (" + r.vehiculo.placa + ")"
+            + " - " + r.fechaInicio + " a " + r.fechaFin
+            + " - " + capitalizar(r.estado) + " ";
+
+        if (r.estado === "ACTIVA") {
+            const b = document.createElement("button");
+            b.textContent = "Cancelar";
+            b.onclick = () => cancelar(r.id);
+            p.appendChild(b);
+        }
+        lista.appendChild(p);
+    });
+}
+
+async function cancelar(id) {
+    if (!confirm("¿Cancelar esta reserva?")) return;
+    const mensaje = document.getElementById("mensaje");
+    try {
+        const res = await fetch(API + "/reservas/" + id + "/cancelar", { method: "PUT" });
+        if (res.ok) {
+            mensaje.textContent = "Reserva cancelada.";
+            cargar();
+        } else {
+            mensaje.textContent = "No se pudo cancelar la reserva.";
+        }
+    } catch (e) {
+        mensaje.textContent = "No se pudo conectar con el servidor.";
+    }
+}
+
+async function cargar() {
+    try {
+        const res = await fetch(API + "/reservas");
+        reservas = await res.json();
+        mostrar();
+    } catch (e) {
+        document.getElementById("lista").innerHTML = "<p>No se pudo conectar con el servidor.</p>";
+    }
+}
+
+cargar();
+</script>
+
 </body>
 </html>

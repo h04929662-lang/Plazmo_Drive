@@ -15,16 +15,60 @@
 <div class="contenedor">
     <h2>Nuevo Vehículo</h2>
 
-    <input type="text" placeholder="Marca">
-    <input type="text" placeholder="Modelo">
-    <input type="text" placeholder="Placa">
-    <input type="text" placeholder="Color">
-    <input type="text" placeholder="Tipo de Vehículo (Carro, Moto, etc.)">
-    <input type="text" placeholder="Estado (Disponible / Alquilado)">
+    <input type="text" id="marca" placeholder="Marca">
+    <input type="text" id="modelo" placeholder="Modelo">
+    <input type="text" id="placa" placeholder="Placa">
+    <input type="text" id="color" placeholder="Color">
+    <input type="text" id="tipo" placeholder="Tipo de Vehículo (Carro, Moto, etc.)">
+    <select id="estado">
+        <option value="DISPONIBLE">Disponible</option>
+        <option value="ALQUILADO">Alquilado</option>
+    </select>
 
-    <button>Registrar</button>
+    <button onclick="registrar()">Registrar</button>
     <button onclick="window.location.href='vehiculos.html'">Volver</button>
+
+    <p id="mensaje"></p>
 </div>
+
+<script>
+const API = "http://127.0.0.1:8080/plazmodrive/api";
+
+async function registrar() {
+    const mensaje = document.getElementById("mensaje");
+    const v = {
+        marca: document.getElementById("marca").value.trim(),
+        modelo: document.getElementById("modelo").value.trim(),
+        placa: document.getElementById("placa").value.trim(),
+        color: document.getElementById("color").value.trim(),
+        tipo: document.getElementById("tipo").value.trim(),
+        estado: document.getElementById("estado").value
+    };
+
+    if (!v.marca || !v.modelo || !v.placa) {
+        mensaje.textContent = "Marca, modelo y placa son obligatorios.";
+        return;
+    }
+
+    try {
+        const res = await fetch(API + "/vehiculos", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(v)
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok) {
+            mensaje.textContent = "Vehículo registrado correctamente.";
+            setTimeout(() => window.location.href = "vehiculos.html", 900);
+        } else {
+            mensaje.textContent = data.error || "No se pudo registrar el vehículo.";
+        }
+    } catch (e) {
+        mensaje.textContent = "No se pudo conectar con el servidor. ¿Está encendido?";
+    }
+}
+</script>
 
 </body>
 </html>

@@ -1,29 +1,70 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <title>Login - Plazmo Drive</title>
     <link rel="stylesheet" href="estilos.css">
 </head>
+
 <body>
 
 <header>
-  <img src="plazmodrive.jpg" alt="Plazmo Drive" 
-
+    <img src="plazmodrive.jpg"
          alt="Logo Plazmo Drive"
          style="width:180px; display:block; margin:0 auto 10px;">
+
     <h1>PLAZMO DRIVE</h1>
 </header>
 
 <div class="contenedor">
+
     <h2>Iniciar Sesión</h2>
 
-    <input type="text" placeholder="Usuario">
-    <input type="password" placeholder="Contraseña">
+    <input type="text" id="usuario" placeholder="Usuario (cédula)">
 
-    <button>Validar</button>
+    <input type="password" id="contrasena" placeholder="Contraseña">
+
+    <button onclick="validarLogin()">Validar</button>
+    <button onclick="window.location.href='registro.html'">Crear cuenta</button>
+
+    <p id="mensaje"></p>
+
 </div>
+
+<script>
+const API = "http://127.0.0.1:8080/plazmodrive/api";
+
+async function validarLogin() {
+    const usuario = document.getElementById("usuario").value.trim();
+    const contrasena = document.getElementById("contrasena").value;
+    const mensaje = document.getElementById("mensaje");
+
+    if (usuario === "" || contrasena === "") {
+        mensaje.textContent = "Por favor, complete todos los campos.";
+        return;
+    }
+
+    try {
+        const res = await fetch(API + "/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ cedula: usuario, password: contrasena })
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok) {
+            localStorage.setItem("usuario", JSON.stringify(data));
+            mensaje.textContent = "Inicio de sesión exitoso. Bienvenido a Plazmo Drive.";
+            setTimeout(() => window.location.href = "home.html", 800);
+        } else {
+            mensaje.textContent = data.error || "Usuario o contraseña incorrectos.";
+        }
+    } catch (e) {
+        mensaje.textContent = "No se pudo conectar con el servidor. ¿Está encendido?";
+    }
+}
+</script>
 
 </body>
 </html>
-

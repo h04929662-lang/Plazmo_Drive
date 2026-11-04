@@ -1,0 +1,5 @@
+backend/target/
+backend/*.jar
+*.log
+.idea/
+untitled/

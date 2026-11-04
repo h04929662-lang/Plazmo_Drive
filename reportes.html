@@ -13,17 +13,45 @@
 </header>
 
 <div class="contenedor">
-    <h2>Información General</h2>
+    <h2>Resumen general</h2>
 
-    <div class="lista">
-        <p>• Total de vehículos: 20</p>
-        <p>• Vehículos alquilados: 8</p>
-        <p>• Reservas activas: 5</p>
-        <p>• Usuarios registrados: 12</p>
+    <div class="lista" id="lista">
+        <p>Cargando...</p>
     </div>
 
+    <button onclick="cargar()">Actualizar</button>
     <button onclick="window.location.href='home.html'">Volver</button>
 </div>
+
+<script>
+const API = "http://127.0.0.1:8080/plazmodrive/api";
+
+const etiquetas = [
+    ["usuarios", "Usuarios registrados"],
+    ["vehiculos", "Vehículos registrados"],
+    ["vehiculosDisponibles", "Vehículos disponibles"],
+    ["reservasActivas", "Reservas activas"],
+    ["reservasCanceladas", "Reservas canceladas"]
+];
+
+async function cargar() {
+    const lista = document.getElementById("lista");
+    try {
+        const res = await fetch(API + "/reportes");
+        const d = await res.json();
+        lista.innerHTML = "";
+        etiquetas.forEach(([clave, texto]) => {
+            const p = document.createElement("p");
+            p.textContent = "• " + texto + ": " + d[clave];
+            lista.appendChild(p);
+        });
+    } catch (e) {
+        lista.innerHTML = "<p>No se pudo conectar con el servidor.</p>";
+    }
+}
+
+cargar();
+</script>
 
 </body>
 </html>
