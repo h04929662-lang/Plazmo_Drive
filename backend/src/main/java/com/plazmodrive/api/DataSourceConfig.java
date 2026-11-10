@@ -11,7 +11,7 @@ import jakarta.ejb.Startup;
         portNumber = 5432,
         databaseName = "plazmodrive",
         user = "postgres",
-      password = "CAMBIAR_PASSWORD")
+      password = "${ENV=PLAZMODRIVE_DB_PASSWORD}")
 @Singleton
 @Startup
 public class DataSourceConfig {

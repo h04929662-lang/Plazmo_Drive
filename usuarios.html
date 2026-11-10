@@ -18,45 +18,94 @@
     <input type="text" id="buscar" placeholder="Buscar usuario..." oninput="mostrar()">
 
     <div class="lista" id="lista">
-        <p>Cargando...</p>
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuarios - Plazmo Drive</title>
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<header>
+    <img src="plazmodrive.jpg" class="logo" alt="Plazmo Drive">
+    <h1>Gestión de Usuarios</h1>
+</header>
+
+<div class="contenedor">
+    <h2>Listado de Usuarios</h2>
+
+    <input type="text" id="buscar"
+           placeholder="Buscar usuario..."
+           oninput="mostrar()">
+
+    <div class="lista" id="lista">
+        <p>Cargando usuarios...</p>
     </div>
 
     <button onclick="window.location.href='home.html'">Volver</button>
 </div>
 
 <script>
-const API = "http://127.0.0.1:8080/plazmodrive/api";
+// Dirección de los servicios REST de Plazmo Drive.
+const API = "http://127.0.0.1:8081/plazmodrive/api";
 let usuarios = [];
 
+// Construye el listado y aplica el filtro de búsqueda.
 function mostrar() {
     const lista = document.getElementById("lista");
     const q = document.getElementById("buscar").value.trim().toLowerCase();
+
     lista.innerHTML = "";
 
     const filtrados = usuarios.filter(u =>
-        (u.nombres + " " + u.apellidos + " " + u.cedula).toLowerCase().includes(q));
+        `${u.nombres} ${u.apellidos} ${u.cedula}`.toLowerCase().includes(q)
+    );
 
     if (filtrados.length === 0) {
-        const p = document.createElement("p");
-        p.textContent = "No hay usuarios para mostrar.";
-        lista.appendChild(p);
+        lista.textContent = "No hay usuarios para mostrar.";
         return;
     }
 
     filtrados.forEach(u => {
-        const p = document.createElement("p");
-        p.textContent = "• " + u.nombres + " " + u.apellidos + " - " + u.cedula + " - " + u.rol;
-        lista.appendChild(p);
+        const tarjeta = document.createElement("div");
+        tarjeta.className = "usuario-item";
+
+        const informacion = document.createElement("p");
+        informacion.textContent =
+            `${u.nombres} ${u.apellidos} - Cédula: ${u.cedula} - Rol: ${u.rol}`;
+
+        const editar = document.createElement("button");
+        editar.textContent = "Editar";
+        editar.onclick = () => {
+            window.location.href = `editar-usuario.html?id=${encodeURIComponent(u.id)}`;
+        };
+
+        tarjeta.appendChild(informacion);
+        tarjeta.appendChild(editar);
+        lista.appendChild(tarjeta);
     });
 }
 
+// Consulta los usuarios registrados en el backend.
 async function cargar() {
+    const lista = document.getElementById("lista");
+
     try {
         const res = await fetch(API + "/usuarios");
+
+        if (!res.ok) {
+            throw new Error("No fue posible consultar los usuarios.");
+        }
+
         usuarios = await res.json();
         mostrar();
-    } catch (e) {
-        document.getElementById("lista").innerHTML = "<p>No se pudo conectar con el servidor.</p>";
+
+    } catch (error) {
+        lista.textContent = "No se pudo conectar con el servidor.";
+        console.error(error);
     }
 }
 

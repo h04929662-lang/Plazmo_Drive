@@ -26,43 +26,104 @@
 </div>
 
 <script>
-const API = "http://127.0.0.1:8080/plazmodrive/api";
+const API = "http://127.0.0.1:8081/plazmodrive/api";
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehículos - Plazmo Drive</title>
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<header>
+    <img src="plazmodrive.jpg" class="logo" alt="Plazmo Drive">
+    <h1>Gestión de Vehículos</h1>
+</header>
+
+<div class="contenedor">
+    <h2>Inventario</h2>
+
+    <input type="text" id="buscar"
+           placeholder="Buscar vehículo..."
+           oninput="mostrar()">
+
+    <div class="lista" id="lista">
+        <p>Cargando vehículos...</p>
+    </div>
+
+    <button onclick="window.location.href='registrar-vehiculo.html'">
+        Registrar Vehículo
+    </button>
+    <button onclick="window.location.href='home.html'">Volver</button>
+</div>
+
+<script>
+// Dirección de los servicios REST de Plazmo Drive.
+const API = "http://127.0.0.1:8081/plazmodrive/api";
 let vehiculos = [];
 
-function capitalizar(t) {
-    t = (t || "").toLowerCase();
-    return t.charAt(0).toUpperCase() + t.slice(1);
+// Convierte el estado a una presentación legible.
+function capitalizar(texto) {
+    texto = (texto || "").toLowerCase();
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
+// Muestra los vehículos y permite filtrarlos.
 function mostrar() {
     const lista = document.getElementById("lista");
     const q = document.getElementById("buscar").value.trim().toLowerCase();
+
     lista.innerHTML = "";
 
     const filtrados = vehiculos.filter(v =>
-        (v.marca + " " + v.modelo + " " + v.placa).toLowerCase().includes(q));
+        `${v.marca} ${v.modelo} ${v.placa}`.toLowerCase().includes(q)
+    );
 
     if (filtrados.length === 0) {
-        const p = document.createElement("p");
-        p.textContent = "No hay vehículos para mostrar.";
-        lista.appendChild(p);
+        lista.textContent = "No hay vehículos para mostrar.";
         return;
     }
 
     filtrados.forEach(v => {
-        const p = document.createElement("p");
-        p.textContent = "• " + v.marca + " " + v.modelo + " - " + v.placa + " - " + capitalizar(v.estado);
-        lista.appendChild(p);
+        const tarjeta = document.createElement("div");
+        tarjeta.className = "vehiculo-item";
+
+        const informacion = document.createElement("p");
+        informacion.textContent =
+            `${v.marca} ${v.modelo} - Placa: ${v.placa} - Estado: ${capitalizar(v.estado)}`;
+
+        const editar = document.createElement("button");
+        editar.textContent = "Editar";
+        editar.onclick = () => {
+            window.location.href = `editar-vehiculo.html?id=${encodeURIComponent(v.id)}`;
+        };
+
+        tarjeta.appendChild(informacion);
+        tarjeta.appendChild(editar);
+        lista.appendChild(tarjeta);
     });
 }
 
+// Consulta el inventario al servicio REST.
 async function cargar() {
+    const lista = document.getElementById("lista");
+
     try {
         const res = await fetch(API + "/vehiculos");
+
+        if (!res.ok) {
+            throw new Error("No fue posible consultar los vehículos.");
+        }
+
         vehiculos = await res.json();
         mostrar();
-    } catch (e) {
-        document.getElementById("lista").innerHTML = "<p>No se pudo conectar con el servidor.</p>";
+
+    } catch (error) {
+        lista.textContent = "No se pudo conectar con el servidor.";
+        console.error(error);
     }
 }
 

@@ -3,3 +3,7 @@ backend/*.jar
 *.log
 .idea/
 untitled/
+
+# Configuracion local de PostgreSQL
+backend/.env
+backend/*.properties

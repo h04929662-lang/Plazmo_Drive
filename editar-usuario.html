@@ -1,21 +1,136 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editar Usuario - Plazmo Drive</title>
     <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
+
 <header>
-    <img src="plazmodrive.jpg" style="width:180px; display:block; margin:0 auto;">
+    <img src="plazmodrive.jpg" class="logo" alt="Plazmo Drive">
     <h1>Editar Usuario</h1>
 </header>
 
 <div class="contenedor">
-    <input type="text" placeholder="Nombre completo">
-    <input type="email" placeholder="Correo">
-    <input type="text" placeholder="Usuario">
-    <button>Guardar Cambios</button>
+    <h2>Actualizar información</h2>
+
+    <form id="formulario">
+        <label for="nombres">Nombres</label>
+        <input type="text" id="nombres" required>
+
+        <label for="apellidos">Apellidos</label>
+        <input type="text" id="apellidos" required>
+
+        <label for="cedula">Cédula</label>
+        <input type="text" id="cedula" required>
+
+        <label for="fechaNacimiento">Fecha de nacimiento</label>
+        <input type="date" id="fechaNacimiento" required>
+
+        <label for="password">Nueva contraseña (opcional)</label>
+        <input type="password" id="password"
+               placeholder="Dejar vacío para conservar la actual">
+
+        <button type="submit">Guardar cambios</button>
+        <button type="button"
+                onclick="window.location.href='usuarios.html'">
+            Cancelar
+        </button>
+    </form>
+
+    <p id="mensaje"></p>
 </div>
+
+<script>
+// Dirección base de los servicios REST.
+const API = "http://127.0.0.1:8081/plazmodrive/api";
+
+// Recupera el ID enviado desde el listado de usuarios.
+const id = new URLSearchParams(window.location.search).get("id");
+const formulario = document.getElementById("formulario");
+const mensaje = document.getElementById("mensaje");
+
+// Consulta los datos actuales del usuario.
+async function cargarUsuario() {
+    if (!id) {
+        mensaje.textContent = "No se recibió el identificador del usuario.";
+        formulario.hidden = true;
+        return;
+    }
+
+    try {
+        const respuesta = await fetch(`${API}/usuarios/${encodeURIComponent(id)}`);
+
+        if (!respuesta.ok) {
+            throw new Error("No se encontró el usuario.");
+        }
+
+        const usuario = await respuesta.json();
+
+        document.getElementById("nombres").value = usuario.nombres || "";
+        document.getElementById("apellidos").value = usuario.apellidos || "";
+        document.getElementById("cedula").value = usuario.cedula || "";
+        document.getElementById("fechaNacimiento").value =
+            usuario.fechaNacimiento || "";
+
+    } catch (error) {
+        mensaje.textContent = error.message;
+        formulario.hidden = true;
+        console.error(error);
+    }
+}
+
+// Envía los cambios al servicio REST mediante PUT.
+formulario.addEventListener("submit", async function(evento) {
+    evento.preventDefault();
+    mensaje.textContent = "Guardando cambios...";
+
+    const datos = {
+        nombres: document.getElementById("nombres").value.trim(),
+        apellidos: document.getElementById("apellidos").value.trim(),
+        cedula: document.getElementById("cedula").value.trim(),
+        fechaNacimiento: document.getElementById("fechaNacimiento").value
+    };
+
+    const password = document.getElementById("password").value;
+
+    if (password.trim()) {
+        datos.password = password;
+    }
+
+    try {
+        const respuesta = await fetch(
+            `${API}/usuarios/${encodeURIComponent(id)}`,
+            {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(datos)
+            }
+        );
+
+        const resultado = await respuesta.json().catch(() => ({}));
+
+        if (!respuesta.ok) {
+            throw new Error(resultado.error || "No se pudieron guardar los cambios.");
+        }
+
+        mensaje.textContent = "Usuario actualizado correctamente.";
+        setTimeout(() => {
+            window.location.href = "usuarios.html";
+        }, 1200);
+
+    } catch (error) {
+        mensaje.textContent = error.message;
+        console.error(error);
+    }
+});
+
+// Carga la información al abrir la pantalla.
+cargarUsuario();
+</script>
+
 </body>
 </html>

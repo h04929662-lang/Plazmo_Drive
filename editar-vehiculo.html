@@ -1,22 +1,145 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editar Vehículo - Plazmo Drive</title>
     <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
+
 <header>
-    <img src="plazmodrive.jpg" style="width:180px; display:block; margin:0 auto;">
+    <img src="plazmodrive.jpg" class="logo" alt="Plazmo Drive">
     <h1>Editar Vehículo</h1>
 </header>
 
 <div class="contenedor">
-    <input type="text" placeholder="Modelo">
-    <input type="text" placeholder="Placa">
-    <input type="text" placeholder="Color">
-    <input type="number" placeholder="Año">
-    <button>Actualizar</button>
+    <h2>Actualizar información del vehículo</h2>
+
+    <form id="formulario">
+        <label for="marca">Marca</label>
+        <input type="text" id="marca" required>
+
+        <label for="modelo">Modelo</label>
+        <input type="text" id="modelo" required>
+
+        <label for="placa">Placa</label>
+        <input type="text" id="placa" required>
+
+        <label for="color">Color</label>
+        <input type="text" id="color">
+
+        <label for="tipo">Tipo de vehículo</label>
+        <input type="text" id="tipo">
+
+        <label for="anio">Año</label>
+        <input type="number" id="anio" min="1900" max="2100">
+
+        <label for="estado">Estado</label>
+        <select id="estado" required>
+            <option value="DISPONIBLE">Disponible</option>
+            <option value="ALQUILADO">Alquilado</option>
+        </select>
+
+        <button type="submit">Guardar cambios</button>
+        <button type="button"
+                onclick="window.location.href='vehiculos.html'">
+            Cancelar
+        </button>
+    </form>
+
+    <p id="mensaje"></p>
 </div>
+
+<script>
+// Dirección base de los servicios REST.
+const API = "http://127.0.0.1:8081/plazmodrive/api";
+
+// Recupera el identificador enviado desde el inventario.
+const id = new URLSearchParams(window.location.search).get("id");
+const formulario = document.getElementById("formulario");
+const mensaje = document.getElementById("mensaje");
+
+// Consulta los datos del vehículo seleccionado.
+async function cargarVehiculo() {
+    if (!id) {
+        mensaje.textContent = "No se recibió el identificador del vehículo.";
+        formulario.hidden = true;
+        return;
+    }
+
+    try {
+        const respuesta = await fetch(`${API}/vehiculos/${encodeURIComponent(id)}`);
+
+        if (!respuesta.ok) {
+            throw new Error("No se encontró el vehículo.");
+        }
+
+        const vehiculo = await respuesta.json();
+
+        document.getElementById("marca").value = vehiculo.marca || "";
+        document.getElementById("modelo").value = vehiculo.modelo || "";
+        document.getElementById("placa").value = vehiculo.placa || "";
+        document.getElementById("color").value = vehiculo.color || "";
+        document.getElementById("tipo").value = vehiculo.tipo || "";
+        document.getElementById("anio").value = vehiculo.anio ?? "";
+        document.getElementById("estado").value = vehiculo.estado || "DISPONIBLE";
+
+    } catch (error) {
+        mensaje.textContent = error.message;
+        formulario.hidden = true;
+        console.error(error);
+    }
+}
+
+// Envía la actualización del vehículo al backend.
+formulario.addEventListener("submit", async function(evento) {
+    evento.preventDefault();
+    mensaje.textContent = "Guardando cambios...";
+
+    const datos = {
+        marca: document.getElementById("marca").value.trim(),
+        modelo: document.getElementById("modelo").value.trim(),
+        placa: document.getElementById("placa").value.trim(),
+        color: document.getElementById("color").value.trim(),
+        tipo: document.getElementById("tipo").value.trim(),
+        anio: document.getElementById("anio").value
+            ? Number(document.getElementById("anio").value)
+            : null,
+        estado: document.getElementById("estado").value
+    };
+
+    try {
+        const respuesta = await fetch(
+            `${API}/vehiculos/${encodeURIComponent(id)}`,
+            {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(datos)
+            }
+        );
+
+        const resultado = await respuesta.json().catch(() => ({}));
+
+        if (!respuesta.ok) {
+            throw new Error(resultado.error || "No se pudieron guardar los cambios.");
+        }
+
+        mensaje.textContent = "Vehículo actualizado correctamente.";
+        setTimeout(() => {
+            window.location.href = "vehiculos.html";
+        }, 1200);
+
+    } catch (error) {
+        mensaje.textContent = error.message;
+        console.error(error);
+    }
+});
+
+// Carga los datos cuando se abre el formulario.
+cargarVehiculo();
+</script>
+
 </body>
 </html>
