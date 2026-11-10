@@ -11,12 +11,20 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Controlador web encargado de gestionar las solicitudes de vehículos.
+ * Atiende las peticiones GET y POST mediante la ruta /web/vehiculos.
+ */
 @WebServlet("/web/vehiculos")
 public class VehiculoServlet extends HttpServlet {
 
+    // Servicio encargado de consultar y registrar vehículos.
     @Inject
     private VehiculoWebService vehiculoService;
 
+    /**
+     * Consulta los vehículos registrados y muestra la vista JSP.
+     */
     @Override
     protected void doGet(HttpServletRequest request,
                          HttpServletResponse response)
@@ -29,6 +37,9 @@ public class VehiculoServlet extends HttpServlet {
                .forward(request, response);
     }
 
+    /**
+     * Recibe los datos del formulario, valida los campos y registra el vehículo.
+     */
     @Override
     protected void doPost(HttpServletRequest request,
                           HttpServletResponse response)
@@ -40,6 +51,7 @@ public class VehiculoServlet extends HttpServlet {
         String marca = request.getParameter("marca");
         String modelo = request.getParameter("modelo");
 
+        // Verifica que los campos obligatorios tengan información.
         if (placa == null || placa.isBlank()
                 || marca == null || marca.isBlank()
                 || modelo == null || modelo.isBlank()) {
@@ -51,6 +63,7 @@ public class VehiculoServlet extends HttpServlet {
             return;
         }
 
+        // Construye el objeto con los datos recibidos del formulario.
         Vehiculo vehiculo = new Vehiculo();
         vehiculo.setPlaca(placa);
         vehiculo.setMarca(marca);
@@ -60,6 +73,7 @@ public class VehiculoServlet extends HttpServlet {
 
         String anio = request.getParameter("anio");
 
+        // Convierte el año a número cuando el usuario lo proporciona.
         if (anio != null && !anio.isBlank()) {
             try {
                 vehiculo.setAnio(Integer.valueOf(anio));
@@ -73,6 +87,8 @@ public class VehiculoServlet extends HttpServlet {
 
         try {
             vehiculoService.registrar(vehiculo);
+
+            // Redirige al listado después de registrar correctamente.
             response.sendRedirect(
                     request.getContextPath() + "/web/vehiculos?registrado=1"
             );
